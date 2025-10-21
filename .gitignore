@@ -1,0 +1,28 @@
+# Sensitive files
+db-password.txt
+
+# Docker volumes
+mysql_data/
+
+# Backup files
+backups/
+docker-images/
+*.tar
+*.tar.gz
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/

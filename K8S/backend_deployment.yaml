@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      initContainers:
+      - name: setup-secrets
+        image: busybox:latest
+        command: ['sh', '-c', 'mkdir -p /mnt/run/secrets && cp /tmp-secrets/* /mnt/run/secrets/']
+        volumeMounts:
+        - name: db-password-source
+          mountPath: /tmp-secrets
+          readOnly: true
+        - name: run-secrets
+          mountPath: /mnt/run/secrets
+      containers:
+      - name: backend
+        image: three-tier-app-backend:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: run-secrets
+          mountPath: /run/secrets
+          readOnly: false
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 45
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 35
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 5
+      volumes:
+      - name: db-password-source
+        secret:
+          secretName: db-secret
+          items:
+          - key: db-password
+            path: db-password
+      - name: run-secrets
+        emptyDir: {}

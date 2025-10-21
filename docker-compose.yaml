@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # MySQL Database
+  # ==========================================
+  mysql:
+    image: mysql:8.0
+    container_name: three-tier-mysql
+    hostname: db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db-password
+      MYSQL_DATABASE: example
+    secrets:
+      - source: db_password
+        target: db-password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - three-tier-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pMySecurePassword123!"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Backend API (Go)
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: three-tier-backend
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_NAME: example
+      PORT: 8000
+    ports:
+      - "8080:8000"
+    secrets:
+      - source: db_password
+        target: db-password
+    networks:
+      - three-tier-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  # ==========================================
+  # Nginx Reverse Proxy
+  # ==========================================
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: three-tier-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - three-tier-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://backend:8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# ==========================================
+# Volumes
+# ==========================================
+volumes:
+  mysql_data:
+    driver: local
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  three-tier-network:
+    driver: bridge
+
+# ==========================================
+# Secrets
+# ==========================================
+secrets:
+  db_password:
+    file: ./db-password.txt
