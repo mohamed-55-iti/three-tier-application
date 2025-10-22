@@ -392,7 +392,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👥 Authors
 
-- Your Name - Initial work
+- Mohamed Khaled Ahmed
 
 ## 🙏 Acknowledgments
 
@@ -404,7 +404,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 For issues and questions:
 - Create an issue in the GitHub repository
-- Email: your-email@example.com
+- Email: mohamedkhaledramy99@gmail.com
 
 ---
 
